@@ -13,7 +13,7 @@ async function connectToWhatsapp() {
     // Create WhatsApp socket with specific configuration
     const socket = makeWASocket({
         printQRInTerminal: false, // Set to false because we will print it manually below
-        browser: ['Nea', 'Safari', '1.0.0'],
+        browser: ['Ubuntu', 'Chrome', '20.0.0'],
         auth: auth.state,
         logger: pino({ level: 'silent' }),
     });
