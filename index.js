@@ -22,7 +22,7 @@ const question = (text) => {
 
 async function connectToWhatsapp() {
     const { version } = await fetchLatestBaileysVersion();
-    const { state, saveCreds } = await useMultiFileAuthState("nea_pairing_session");
+    const { state, saveCreds } = await useMultiFileAuthState("pairing_session");
 
     const socket = makeWASocket({
         version,
