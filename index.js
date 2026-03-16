@@ -16,19 +16,24 @@ const Groq = require("groq-sdk");
 fluentFfmpeg.setFfmpegPath(ffmpegPath);
 
 const groq = new Groq({
-    apiKey: "Fill it with your API Key (you can get it on console.groq.com)"
+    apiKey: "YOUR_GROQ_API_KEY"
 });
 
 const SYSTEM_PROMPT =
-    "Your name is Nea. You are a soft-spoken and supportive assistant. Respond in Indonesian unless the user speaks English. Keep it friendly and helpful for students.";
+    "Your name is Nea. You are a soft-spoken and supportive assistant. Respond in Indonesian unless the user speaks English. " +
+    "If the user greets you for the first time or asks who you are, introduce yourself as Nea and mention they can type .menu for help. " +
+    "Keep your responses friendly and helpful, and be a safe place for user to talk about their problems.";
 
-const welcomedUsers = new Set();
 const chatHistories = {};
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const question = (text) => {
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+
     return new Promise((resolve) => {
         rl.question(text, (answer) => {
             rl.close();
@@ -98,11 +103,11 @@ async function connectToWhatsapp() {
 
         if (messageText.toLowerCase() === ".menu") {
             const menu =
-                "*NEA BOT MENU* 🌸\n\n" +
+                "*NEA CHATBOT MENU* 🌸\n\n" +
                 "1. *.sticker* (Reply to an image/video with this caption)\n" +
                 "2. *.reset* (Clear chat memory)\n" +
-                "3. *Normal Chat* (Talk to the AI normally)\n\n" +
-                "_I remember conversations now._";
+                "3. *Chat* (Talk with me normally.)\n\n" +
+                "_I'm ready to help._";
 
             await socket.sendMessage(jid, { text: menu }, { quoted: chat });
             return;
@@ -110,9 +115,7 @@ async function connectToWhatsapp() {
 
         if (messageText.toLowerCase() === ".reset") {
             chatHistories[jid] = [];
-            await socket.sendMessage(jid, {
-                text: "Memory cleared. Let's start fresh."
-            });
+            await socket.sendMessage(jid, { text: "Memory cleared. Let's start fresh." });
             return;
         }
 
@@ -138,7 +141,7 @@ async function connectToWhatsapp() {
 
                 const sticker = await createSticker(media, {
                     pack: "Nea Bot",
-                    author: "@nea666xo",
+                    author: "@neaxoxo",
                     type: StickerTypes.FULL,
                     quality: 30
                 });
@@ -158,14 +161,6 @@ async function connectToWhatsapp() {
                 await socket.sendPresenceUpdate("composing", jid);
                 await delay(1500);
 
-                let welcomePrefix = "";
-
-                if (!welcomedUsers.has(jid)) {
-                    welcomePrefix =
-                        "Hello! I'm Nea. 😊\nType *.menu* to see my features.\n\n---\n\n";
-                    welcomedUsers.add(jid);
-                }
-
                 chatHistories[jid].push({
                     role: "user",
                     content: messageText
@@ -173,19 +168,17 @@ async function connectToWhatsapp() {
 
                 if (chatHistories[jid].length > 10) chatHistories[jid].shift();
 
-                const messagesForGroq = [
-                    { role: "system", content: SYSTEM_PROMPT },
-                    ...chatHistories[jid]
-                ];
-
                 const completion = await groq.chat.completions.create({
-                    messages: messagesForGroq,
+                    messages: [
+                        { role: "system", content: SYSTEM_PROMPT },
+                        ...chatHistories[jid]
+                    ],
                     model: "llama-3.3-70b-versatile"
                 });
 
                 const aiResponse =
                     completion.choices[0]?.message?.content ||
-                    "Sorry, something went wrong.";
+                    "Sorry, I couldn't understand that.";
 
                 chatHistories[jid].push({
                     role: "assistant",
@@ -194,18 +187,14 @@ async function connectToWhatsapp() {
 
                 await socket.sendPresenceUpdate("paused", jid);
 
-                await socket.sendMessage(
-                    jid,
-                    { text: welcomePrefix + aiResponse },
-                    { quoted: chat }
-                );
+                await socket.sendMessage(jid, { text: aiResponse }, { quoted: chat });
             } catch (err) {
                 console.error("Groq error:", err);
 
                 await socket.sendPresenceUpdate("paused", jid);
 
                 await socket.sendMessage(jid, {
-                    text: "Sorry, something went wrong. Please try again."
+                    text: "Sorry, something went wrong."
                 });
             }
         }
