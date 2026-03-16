@@ -1,0 +1,4 @@
+node_modules/
+pairing_session/
+*.exe
+*.log
