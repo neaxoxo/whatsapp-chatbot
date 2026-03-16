@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const {
     makeWASocket,
     useMultiFileAuthState,
@@ -12,19 +14,34 @@ const readline = require("readline");
 const ffmpegPath = require("ffmpeg-static");
 const fluentFfmpeg = require("fluent-ffmpeg");
 const Groq = require("groq-sdk");
+const fs = require("fs");
 
 fluentFfmpeg.setFfmpegPath(ffmpegPath);
 
 const groq = new Groq({
-    apiKey: "YOUR_GROQ_API_KEY"
+    apiKey: process.env.GROQ_API_KEY
 });
 
 const SYSTEM_PROMPT =
-    "Your name is Nea. You are a soft-spoken and supportive assistant. Respond in Indonesian unless the user speaks English. " +
-    "If the user greets you for the first time or asks who you are, introduce yourself as Nea and mention they can type .menu for help. " +
-    "Keep your responses friendly and helpful, and be a safe place for user to talk about their problems.";
+    "Your name is Nea. You are a soft-spoken and supportive assistant." +
+    "If the user greets you or asks who you are, introduce yourself as Nea and mention that they can type .menu for help. " +
+    "Be friendly and supportive, especially when users talk about their problems. Avoid being too formal and keep responses natural, like a real human.";
 
-const chatHistories = {};
+const HISTORY_FILE = "./histories.json";
+
+let chatHistories = {};
+
+if (fs.existsSync(HISTORY_FILE)) {
+    try {
+        chatHistories = JSON.parse(fs.readFileSync(HISTORY_FILE, "utf-8"));
+    } catch {
+        chatHistories = {};
+    }
+}
+
+const saveHistory = () => {
+    fs.writeFileSync(HISTORY_FILE, JSON.stringify(chatHistories, null, 2));
+};
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -55,7 +72,7 @@ async function connectToWhatsapp() {
     });
 
     if (!socket.authState.creds.registered) {
-        console.log("--- PAIRING CODE MODE ---");
+        console.log("PAIRING CODE MODE");
 
         const phoneNumber = await question("Enter your WhatsApp number: ");
 
@@ -63,16 +80,16 @@ async function connectToWhatsapp() {
             try {
                 let code = await socket.requestPairingCode(phoneNumber);
                 code = code?.match(/.{1,4}/g)?.join("-") || code;
-                console.log(`\nPAIRING CODE: ${code}`);
+                console.log(`Pairing Code: ${code}`);
             } catch (err) {
-                console.error("Failed to request pairing code:", err);
+                console.error("Pairing request failed:", err);
             }
         }, 3000);
     }
 
     socket.ev.on("creds.update", saveCreds);
 
-    socket.ev.on("connection.update", async (update) => {
+    socket.ev.on("connection.update", (update) => {
         const { connection, lastDisconnect } = update;
 
         if (connection === "close") {
@@ -104,10 +121,10 @@ async function connectToWhatsapp() {
         if (messageText.toLowerCase() === ".menu") {
             const menu =
                 "*NEA CHATBOT MENU* 🌸\n\n" +
-                "1. *.sticker* (Reply to an image/video with this caption)\n" +
-                "2. *.reset* (Clear chat memory)\n" +
-                "3. *Chat* (Talk with me normally.)\n\n" +
-                "_I'm ready to help._";
+                "1. *.sticker* — Reply to an image/video with this caption\n" +
+                "2. *.reset* — Clear chat memory\n" +
+                "3. *Chat* — Talk with the AI normally\n\n" +
+                "_Ready to help._";
 
             await socket.sendMessage(jid, { text: menu }, { quoted: chat });
             return;
@@ -115,6 +132,7 @@ async function connectToWhatsapp() {
 
         if (messageText.toLowerCase() === ".reset") {
             chatHistories[jid] = [];
+            saveHistory();
             await socket.sendMessage(jid, { text: "Memory cleared. Let's start fresh." });
             return;
         }
@@ -168,6 +186,8 @@ async function connectToWhatsapp() {
 
                 if (chatHistories[jid].length > 10) chatHistories[jid].shift();
 
+                saveHistory();
+
                 const completion = await groq.chat.completions.create({
                     messages: [
                         { role: "system", content: SYSTEM_PROMPT },
@@ -184,6 +204,8 @@ async function connectToWhatsapp() {
                     role: "assistant",
                     content: aiResponse
                 });
+
+                saveHistory();
 
                 await socket.sendPresenceUpdate("paused", jid);
 

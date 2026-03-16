@@ -1,19 +1,30 @@
 node_modules/
 
+# Secrets and API Keys
+.env
+
+# Local Database/Storage
+histories.json
+
+# Session and Auth data
 *_session/
 pairing_session/
 auth_session/
 
+# Executables
 *.exe
 *.msi
 bin/
 
+# Logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# System files
 Thumbs.db
 .DS_Store
 
+# Editor settings
 .vscode/
