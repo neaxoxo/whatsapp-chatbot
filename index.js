@@ -9,6 +9,9 @@ const {
 const pino = require("pino");
 const { createSticker, StickerTypes } = require("wa-sticker-formatter");
 const readline = require("readline");
+const ffmpegPath = require('ffmpeg-static');
+const fluentFfmpeg = require('fluent-ffmpeg');
+fluentFfmpeg.setFfmpegPath(ffmpegPath);
 
 const question = (text) => {
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -86,14 +89,6 @@ async function connectToWhatsapp() {
             chat.message?.conversation
         )?.toLowerCase() || "";
 
-        if (messageText === ".ping") {
-            await socket.sendMessage(
-                chat.key.remoteJid,
-                { text: "*PONG!* 🏓" },
-                { quoted: chat }
-            );
-        }
-
         const isImage = chat.message?.imageMessage;
         const isVideo = chat.message?.videoMessage;
         const caption = isImage?.caption || isVideo?.caption || "";
@@ -119,9 +114,9 @@ async function connectToWhatsapp() {
 
                 const sticker = await createSticker(media, {
                     pack: "Nea Bot",
-                    author: "@neaxoxo",
+                    author: "@nea666xo on X",
                     type: StickerTypes.FULL,
-                    quality: 50
+                    quality: 30
                 });
 
                 await socket.sendMessage(
