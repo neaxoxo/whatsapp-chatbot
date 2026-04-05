@@ -56,16 +56,33 @@ Nea is designed with a specific personality profile: a soft-spoken, confident, a
    ```
 3. Ensure that `histories.json` and `.env` are listed in your `.gitignore` to maintain privacy and security.
 
-## Usage
+## Usage and Pairing Process
 
-1. Launch the bot:
-   ```bash
-   node index.js
-   ```
-2. For the initial setup, enter your phone number (with country code) in the terminal when prompted.
-3. Use the generated Pairing Code on your WhatsApp mobile app to link the device.
+To connect the bot to your WhatsApp account, follow these steps:
 
-### Available Commands
+### 1. Launch the Application
+Run the following command in your terminal:
+```bash
+node index.js
+```
+
+### 2. Enter Phone Number
+When the terminal displays `PAIRING CODE MODE`, enter the WhatsApp phone number you wish to use as the bot. 
+- **Format**: Use the international format without `+` or spaces (e.g., `6281234567890`).
+
+### 3. Retrieve the Pairing Code
+The terminal will generate an 8-character code (e.g., `ASDF-GHJK`). Copy this code.
+
+### 4. Link via WhatsApp Mobile App
+1. Open **WhatsApp** on your mobile device.
+2. Navigate to **Settings** > **Linked Devices**.
+3. Select **Link a Device**.
+4. Instead of scanning a QR code, select **Link with phone number instead** at the bottom of the screen.
+5. Enter the 8-character code displayed in your terminal.
+
+Once paired, the terminal will confirm the connection, and the bot will remain active as long as the process is running.
+
+## Available Commands
 
 | Command | Description |
 | :--- | :--- |
